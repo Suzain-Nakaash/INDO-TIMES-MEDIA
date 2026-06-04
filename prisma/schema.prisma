@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Admin — Single admin system (no registration)
+// ============================================
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  @@map("admins")
+}
+
+// ============================================
+// Categories — Article categorization
+// ============================================
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?   @db.Text
+  articles    Article[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+// ============================================
+// Articles — News content
+// ============================================
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Article {
+  id             String        @id @default(cuid())
+  title          String
+  slug           String        @unique
+  summary        String?       @db.Text
+  content        String        @db.Text
+  featuredImage  String?
+  categoryId     String
+  category       Category      @relation(fields: [categoryId], references: [id])
+  status         ArticleStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?       @db.Text
+  views          Int           @default(0)
+  tags           String[]
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  comments       Comment[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([publishedAt(sort: Desc)])
+  @@index([slug])
+  @@index([views(sort: Desc)])
+  @@map("articles")
+}
+
+// ============================================
+// Media — Uploaded files
+// ============================================
+model Media {
+  id         String   @id @default(cuid())
+  fileName   String
+  fileType   String
+  url        String
+  size       Int
+  uploadedAt DateTime @default(now())
+
+  @@index([fileType])
+  @@map("media")
+}
+
+// ============================================
+// Comments — Reader engagement
+// ============================================
+model Comment {
+  id        String   @id @default(cuid())
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  comment   String   @db.Text
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([articleId])
+  @@index([approved])
+  @@map("comments")
+}
+
+// ============================================
+// Newsletter — Subscriber management
+// ============================================
+model Newsletter {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+
+  @@map("newsletters")
+}

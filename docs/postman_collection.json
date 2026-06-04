@@ -1,0 +1,418 @@
+{
+  "info": {
+    "name": "IndoTimesMedia API",
+    "description": "Complete API collection for IndoTimesMedia digital newspaper platform",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    console.log('Access token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@indotimesmedia.com\",\n  \"password\": \"Admin@123456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["auth", "refresh-token"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Breaking News\",\n  \"description\": \"Latest breaking news\"\n}" },
+            "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] }
+          }
+        },
+        {
+          "name": "List Categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] }
+          }
+        },
+        {
+          "name": "Get Category",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/categories/:id", "host": ["{{baseUrl}}"], "path": ["categories", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Category\",\n  \"description\": \"Updated description\"\n}" },
+            "url": { "raw": "{{baseUrl}}/categories/:id", "host": ["{{baseUrl}}"], "path": ["categories", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/categories/:id", "host": ["{{baseUrl}}"], "path": ["categories", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Articles",
+      "item": [
+        {
+          "name": "Create Article",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Breaking: Major Development in Tech\",\n  \"content\": \"<h2>Full article content here</h2><p>Supports HTML, rich text, and embedded content.</p>\",\n  \"summary\": \"A summary of the article\",\n  \"categoryId\": \"\",\n  \"tags\": [\"tech\", \"breaking\"],\n  \"seoTitle\": \"Breaking Tech News\",\n  \"seoDescription\": \"Latest developments in technology\",\n  \"status\": \"DRAFT\"\n}" },
+            "url": { "raw": "{{baseUrl}}/articles", "host": ["{{baseUrl}}"], "path": ["articles"] }
+          }
+        },
+        {
+          "name": "List Published Articles",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/articles?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["articles"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "List All Articles (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/articles/admin?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["articles", "admin"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Get Article by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/articles/:id", "host": ["{{baseUrl}}"], "path": ["articles", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Get Article by Slug",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/articles/slug/:slug", "host": ["{{baseUrl}}"], "path": ["articles", "slug", ":slug"], "variable": [{ "key": "slug", "value": "" }] }
+          }
+        },
+        {
+          "name": "Update Article",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Updated Title\",\n  \"content\": \"Updated content\"\n}" },
+            "url": { "raw": "{{baseUrl}}/articles/:id", "host": ["{{baseUrl}}"], "path": ["articles", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Publish Article",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/articles/:id/publish", "host": ["{{baseUrl}}"], "path": ["articles", ":id", "publish"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Draft Article",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/articles/:id/draft", "host": ["{{baseUrl}}"], "path": ["articles", ":id", "draft"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Article",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/articles/:id", "host": ["{{baseUrl}}"], "path": ["articles", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Search Articles",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/articles/search?q=tech&page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["articles", "search"], "query": [{ "key": "q", "value": "tech" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Filter Articles",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/articles/filter?categoryId=&status=PUBLISHED&sortBy=createdAt&sortOrder=desc", "host": ["{{baseUrl}}"], "path": ["articles", "filter"], "query": [{ "key": "categoryId", "value": "" }, { "key": "status", "value": "PUBLISHED" }, { "key": "sortBy", "value": "createdAt" }, { "key": "sortOrder", "value": "desc" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }] },
+            "url": { "raw": "{{baseUrl}}/media/upload", "host": ["{{baseUrl}}"], "path": ["media", "upload"] }
+          }
+        },
+        {
+          "name": "Get Media Library",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/media?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["media"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Get Media Item",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/media/:id", "host": ["{{baseUrl}}"], "path": ["media", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Media",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/media/:id", "host": ["{{baseUrl}}"], "path": ["media", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Submit Comment (Public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"articleId\": \"\",\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"comment\": \"Great article!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/comments", "host": ["{{baseUrl}}"], "path": ["comments"] }
+          }
+        },
+        {
+          "name": "List Comments (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/comments?approved=all&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["comments"], "query": [{ "key": "approved", "value": "all" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Get Article Comments",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/comments/article/:articleId", "host": ["{{baseUrl}}"], "path": ["comments", "article", ":articleId"], "variable": [{ "key": "articleId", "value": "" }] }
+          }
+        },
+        {
+          "name": "Approve Comment",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/comments/:id/approve", "host": ["{{baseUrl}}"], "path": ["comments", ":id", "approve"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Reject Comment",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/comments/:id/reject", "host": ["{{baseUrl}}"], "path": ["comments", ":id", "reject"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/comments/:id", "host": ["{{baseUrl}}"], "path": ["comments", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Newsletter",
+      "item": [
+        {
+          "name": "Subscribe",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"subscriber@example.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/newsletter/subscribe", "host": ["{{baseUrl}}"], "path": ["newsletter", "subscribe"] }
+          }
+        },
+        {
+          "name": "Unsubscribe",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"subscriber@example.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/newsletter/unsubscribe", "host": ["{{baseUrl}}"], "path": ["newsletter", "unsubscribe"] }
+          }
+        },
+        {
+          "name": "List Subscribers",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/newsletter/subscribers?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["newsletter", "subscribers"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Export Subscribers CSV",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/newsletter/export", "host": ["{{baseUrl}}"], "path": ["newsletter", "export"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Dashboard Metrics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/analytics/dashboard", "host": ["{{baseUrl}}"], "path": ["analytics", "dashboard"] }
+          }
+        },
+        {
+          "name": "Popular Articles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/analytics/popular?limit=10", "host": ["{{baseUrl}}"], "path": ["analytics", "popular"], "query": [{ "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Views Breakdown",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/analytics/views", "host": ["{{baseUrl}}"], "path": ["analytics", "views"] }
+          }
+        },
+        {
+          "name": "Traffic Statistics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/analytics/traffic", "host": ["{{baseUrl}}"], "path": ["analytics", "traffic"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SEO",
+      "item": [
+        {
+          "name": "Sitemap XML",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/seo/sitemap.xml", "host": ["{{baseUrl}}"], "path": ["seo", "sitemap.xml"] }
+          }
+        },
+        {
+          "name": "Robots.txt",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/seo/robots.txt", "host": ["{{baseUrl}}"], "path": ["seo", "robots.txt"] }
+          }
+        },
+        {
+          "name": "Article SEO Metadata",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/seo/article/:slug/meta", "host": ["{{baseUrl}}"], "path": ["seo", "article", ":slug", "meta"], "variable": [{ "key": "slug", "value": "" }] }
+          }
+        }
+      ]
+    }
+  ]
+}
