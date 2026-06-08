@@ -1,40 +1,53 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { MOCK_ARTICLES } from "@/lib/data";
+import { useArticleFilter } from "@/lib/hooks/useArticles";
+import { useCategories } from "@/lib/hooks/useCategories";
 
 export function TechAndAI() {
-  const articles = MOCK_ARTICLES.slice(0, 3);
+  const { data: categories } = useCategories();
+  const category = categories?.find(
+    (c) => c.slug === "technology" || c.name.toLowerCase() === "technology" || c.slug === "ai"
+  );
+
+  const { data } = useArticleFilter({
+    categoryId: category?.id,
+    status: "PUBLISHED",
+    sortBy: "publishedAt",
+    sortOrder: "desc",
+    page: 1,
+    limit: 4,
+  });
+
+  const articles = data?.articles || [];
+  if (articles.length === 0) return null;
 
   return (
-    <section className="w-full py-12 border-b border-border bg-background">
+    <section className="w-full py-12 border-b border-border bg-muted/20">
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className="font-editorial text-4xl font-bold text-foreground mb-8">Technology & AI</h2>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="font-editorial text-4xl font-bold text-foreground">Tech &amp; AI</h2>
+          <Link href="/category/technology" className="font-body text-sm font-bold uppercase tracking-widest text-primary hover:text-primary/80 transition-colors">
+            More Tech →
+          </Link>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {articles.map((article, i) => (
-            <div key={`tech-${i}`} className="flex flex-col group">
-              <Link href={`/article/${article.id}`} className="block mb-4 overflow-hidden border border-border p-1 bg-muted/10">
-                <div className="relative w-full aspect-video bg-muted overflow-hidden">
-                  <Image
-                    src={article.imageUrl}
-                    alt={article.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {articles.map((article) => (
+            <Link key={article.id} href={`/article/${article.slug}`} className="group flex flex-col">
+              {article.featuredImage && (
+                <div className="relative w-full aspect-video mb-3 bg-muted overflow-hidden">
+                  <Image src={article.featuredImage} alt={article.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
                 </div>
-              </Link>
-              <span className="font-body text-[10px] font-bold uppercase tracking-widest text-primary mb-2">
-                {article.category}
-              </span>
-              <Link href={`/article/${article.id}`}>
-                <h3 className="font-editorial text-2xl font-bold leading-snug group-hover:text-muted-foreground transition-colors mb-2">
-                  {article.title}
-                </h3>
-                <p className="font-body text-sm text-muted-foreground line-clamp-2">
-                  {article.summary}
-                </p>
-              </Link>
-            </div>
+              )}
+              <h3 className="font-editorial text-xl font-bold leading-snug mb-2 group-hover:text-muted-foreground transition-colors">
+                {article.title}
+              </h3>
+              <p className="font-body text-sm text-muted-foreground line-clamp-2 mt-auto">
+                {article.summary}
+              </p>
+            </Link>
           ))}
         </div>
       </div>

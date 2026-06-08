@@ -1,41 +1,152 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Share2, Link as LinkIcon, BookmarkPlus, MessageCircle } from "lucide-react";
-import { MOCK_ARTICLES } from "@/lib/data";
 import { Separator } from "@/components/ui/separator";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
-export default async function ArticlePage({ params }: { params: { slug: string } }) {
-  const article = MOCK_ARTICLES.find(a => a.id === params.slug) || MOCK_ARTICLES[0];
-  const relatedStories = MOCK_ARTICLES.slice(1, 4);
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
+async function getArticle(slug: string) {
+  try {
+    const res = await fetch(`${API_URL}/articles/slug/${slug}`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+async function getRelatedArticles(categoryId: string, excludeSlug: string) {
+  try {
+    const res = await fetch(
+      `${API_URL}/articles/filter?categoryId=${categoryId}&status=PUBLISHED&limit=4&sortBy=publishedAt&sortOrder=desc`,
+      { next: { revalidate: 120 } }
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.data || []).filter((a: { slug: string }) => a.slug !== excludeSlug).slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+async function getSeoMeta(slug: string) {
+  try {
+    const res = await fetch(`${API_URL}/seo/article/${slug}/meta`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const seo = await getSeoMeta(slug);
+  if (!seo) {
+    return {
+      title: "Article | IndoTimesMedia",
+    };
+  }
+  return {
+    title: seo.title,
+    description: seo.description,
+    openGraph: {
+      title: seo.openGraph?.["og:title"] || seo.title,
+      description: seo.openGraph?.["og:description"] || seo.description,
+      url: seo.canonical,
+      type: "article",
+      images: seo.openGraph?.["og:image"] ? [seo.openGraph["og:image"]] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seo.twitterCard?.["twitter:title"] || seo.title,
+      description: seo.twitterCard?.["twitter:description"] || seo.description,
+    },
+    alternates: {
+      canonical: seo.canonical,
+    },
+  };
+}
+
+export default async function ArticlePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const article = await getArticle(slug);
+
+  if (!article) {
+    notFound();
+  }
+
+  const relatedStories = await getRelatedArticles(article.categoryId, article.slug);
+  const seo = await getSeoMeta(slug);
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const wordCount = article.content?.split(/\s+/).length || 0;
+  const readTime = `${Math.max(1, Math.ceil(wordCount / 200))} min read`;
 
   return (
     <div className="w-full bg-background relative">
-      {/* Reading Progress Indicator (CSS-only or minimal approach) */}
-      <div className="fixed top-0 left-0 w-full h-1 bg-muted z-50">
-        <div className="h-full bg-primary w-1/3" /> {/* Note: Real impl would use scroll listener */}
-      </div>
+      {/* JSON-LD Structured Data */}
+      {seo?.jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(seo.jsonLd) }}
+        />
+      )}
 
       <article className="max-w-7xl mx-auto px-4 py-8 md:py-12">
         {/* Article Header */}
         <header className="max-w-4xl mx-auto mb-10 text-center">
           <span className="font-body text-xs font-bold uppercase tracking-widest text-primary mb-4 block">
-            {article.category}
+            {article.category?.name}
           </span>
           <h1 className="font-editorial text-4xl md:text-6xl font-bold leading-tight mb-6">
             {article.title}
           </h1>
-          <p className="font-body text-xl md:text-2xl text-muted-foreground mb-8">
-            {article.summary}
-          </p>
+          {article.summary && (
+            <p className="font-body text-xl md:text-2xl text-muted-foreground mb-8">
+              {article.summary}
+            </p>
+          )}
           
           <div className="flex flex-col md:flex-row items-center justify-between border-y border-border py-4">
             <div className="flex items-center gap-4 mb-4 md:mb-0">
-              <div className="w-12 h-12 rounded-full overflow-hidden relative grayscale">
-                <Image src={`https://i.pravatar.cc/150?u=${article.author}`} alt={article.author} fill className="object-cover" />
+              <div className="w-12 h-12 rounded-full overflow-hidden relative grayscale bg-muted">
+                <Image
+                  src={`https://i.pravatar.cc/150?u=${article.id}`}
+                  alt="Author"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div className="text-left flex flex-col">
-                <span className="font-body font-bold text-sm uppercase tracking-widest">{article.author}</span>
-                <span className="font-body text-xs text-muted-foreground">{article.publishedAt} • {article.readTime}</span>
+                <span className="font-body font-bold text-sm uppercase tracking-widest">IndoTimesMedia</span>
+                <span className="font-body text-xs text-muted-foreground">
+                  {formatDate(article.publishedAt)} • {readTime}
+                </span>
               </div>
             </div>
             
@@ -50,72 +161,71 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         </header>
 
         {/* Hero Image */}
-        <div className="max-w-5xl mx-auto mb-12">
-          <div className="relative w-full aspect-video bg-muted mb-3">
-            <Image src={article.imageUrl} alt={article.title} fill className="object-cover" priority />
+        {article.featuredImage && (
+          <div className="max-w-5xl mx-auto mb-12">
+            <div className="relative w-full aspect-video bg-muted mb-3">
+              <Image src={article.featuredImage} alt={article.title} fill className="object-cover" priority />
+            </div>
+            <figcaption className="font-body text-xs text-muted-foreground">
+              Photograph: IndoTimesMedia
+            </figcaption>
           </div>
-          <figcaption className="font-body text-xs text-muted-foreground">
-            Photograph: IndoTimesMedia / Reuters
-          </figcaption>
-        </div>
+        )}
 
         {/* Article Body & Sidebar Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-6xl mx-auto">
           
           {/* Main Content */}
-          <div className="lg:col-span-8 font-body text-lg leading-relaxed text-foreground/90">
-            <p className="mb-6"><span className="float-left text-7xl font-editorial font-bold leading-none pr-2 pt-2">{article.summary.charAt(0)}</span>{article.summary.slice(1)} This is a longer demonstration of the article body text. It contains detailed insights, reports, and journalistic integrity.</p>
-            
-            <p className="mb-6">The global markets reacted positively to the sudden shift in policy. Experts suggest that the new frameworks will stabilize the region, but caution remains high. "We are looking at an unprecedented level of innovation," one analyst noted.</p>
-
-            <blockquote className="my-10 pl-6 border-l-4 border-primary font-editorial text-2xl italic text-foreground">
-              "This isn't just a breakthrough in technology; it's a fundamental restructuring of how our economy operates."
-            </blockquote>
-
-            <p className="mb-6">Regulators are scrambling. The old rules no longer apply. A new committee has been formed in Geneva to outline the basics of what they're calling 'The New Accord'.</p>
-
-            <h3 className="font-editorial text-3xl font-bold mb-4 mt-8">The Path Forward</h3>
-            
-            <p className="mb-6">As we look to the next quarter, several key indicators suggest sustained growth. However, inflation remains a sticky issue in developing markets.</p>
-
-            {/* Newsletter CTA Inside Article */}
-            <div className="my-10 p-8 border-y-2 border-foreground bg-muted/20 text-center">
-              <h4 className="font-editorial text-2xl font-bold mb-2">Want deeper insights?</h4>
-              <p className="text-sm text-muted-foreground mb-4">Sign up for our premium newsletter.</p>
-              <div className="flex max-w-sm mx-auto">
-                <input type="email" placeholder="Email" className="flex-1 border border-border p-2 outline-none text-sm" />
-                <button className="bg-foreground text-background px-4 py-2 font-bold uppercase tracking-widest text-xs">Subscribe</button>
-              </div>
-            </div>
-
-            <p className="mb-6">More analysis will be provided as the situation develops. Our correspondents are on the ground in Geneva and New York.</p>
-          </div>
+          <div
+            className="lg:col-span-8 font-body text-lg leading-relaxed text-foreground/90 prose prose-lg max-w-none prose-headings:font-editorial prose-headings:font-bold prose-blockquote:border-primary prose-blockquote:font-editorial prose-blockquote:italic"
+            dangerouslySetInnerHTML={{ __html: article.content }}
+          />
 
           {/* Sticky Sidebar */}
           <aside className="lg:col-span-4 relative">
             <div className="sticky top-24">
-              <h3 className="font-body text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6 border-b border-border pb-2">
-                Related Stories
-              </h3>
-              
-              <div className="flex flex-col gap-6">
-                {relatedStories.map((story, i) => (
-                  <Link key={i} href={`/article/${story.id}`} className="group flex flex-col">
-                    <h4 className="font-editorial text-xl font-bold leading-tight mb-2 group-hover:text-muted-foreground transition-colors">
-                      {story.title}
-                    </h4>
-                    <span className="font-body text-[10px] uppercase text-muted-foreground">
-                      {story.publishedAt}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-
-              <div className="mt-12 p-6 bg-muted/30 border border-border">
-                <h3 className="font-body text-xs font-bold uppercase tracking-widest mb-4">Listen to the Podcast</h3>
-                <div className="w-full aspect-square bg-foreground text-background flex items-center justify-center p-4 text-center">
-                  <span className="font-editorial text-2xl font-bold italic">The Daily IndoTimes</span>
+              {/* Tags */}
+              {article.tags && article.tags.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="font-body text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 border-b border-border pb-2">
+                    Tags
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {article.tags.map((tag: string) => (
+                      <span key={tag} className="font-body text-xs px-3 py-1 bg-muted text-muted-foreground border border-border">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+              )}
+
+              {/* Related Stories */}
+              {relatedStories.length > 0 && (
+                <>
+                  <h3 className="font-body text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6 border-b border-border pb-2">
+                    Related Stories
+                  </h3>
+                  
+                  <div className="flex flex-col gap-6">
+                    {relatedStories.map((story: { id: string; slug: string; title: string; publishedAt: string | null }) => (
+                      <Link key={story.id} href={`/article/${story.slug}`} className="group flex flex-col">
+                        <h4 className="font-editorial text-xl font-bold leading-tight mb-2 group-hover:text-muted-foreground transition-colors">
+                          {story.title}
+                        </h4>
+                        <span className="font-body text-[10px] uppercase text-muted-foreground">
+                          {formatDate(story.publishedAt)}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Views counter */}
+              <div className="mt-8 p-4 bg-muted/30 border border-border text-center">
+                <span className="font-editorial text-3xl font-bold">{article.views?.toLocaleString() || 0}</span>
+                <p className="font-body text-xs text-muted-foreground uppercase tracking-widest mt-1">Views</p>
               </div>
             </div>
           </aside>

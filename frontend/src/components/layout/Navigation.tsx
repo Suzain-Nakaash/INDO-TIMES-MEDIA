@@ -4,24 +4,21 @@ import Link from "next/link";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import { useCategories } from "@/lib/hooks/useCategories";
 
-const CATEGORIES = [
-  "Home",
-  "World",
-  "Politics",
-  "Business",
-  "Technology",
-  "AI",
-  "Sports",
-  "Science",
-  "Health",
-  "Education",
-  "Entertainment",
-  "Opinion",
+const FALLBACK_CATEGORIES = [
+  "Home", "World", "Politics", "Business", "Technology",
+  "AI", "Sports", "Science", "Health", "Education",
+  "Entertainment", "Opinion",
 ];
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: categories } = useCategories();
+
+  const navItems = categories && categories.length > 0
+    ? [{ name: "Home", slug: "" }, ...categories.map((c) => ({ name: c.name, slug: c.slug }))]
+    : FALLBACK_CATEGORIES.map((name) => ({ name, slug: name.toLowerCase() }));
 
   return (
     <div className="w-full bg-background border-b border-border sticky top-0 z-40 shadow-sm">
@@ -30,13 +27,13 @@ export function Navigation() {
         <div className="hidden md:flex items-center justify-center">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex w-max space-x-6 lg:space-x-8 py-3 mx-auto">
-              {CATEGORIES.map((category) => (
+              {navItems.map((item) => (
                 <Link
-                  key={category}
-                  href={`/category/${category.toLowerCase()}`}
+                  key={item.slug || 'home'}
+                  href={item.slug === "" ? "/" : `/category/${item.slug}`}
                   className="text-sm font-body font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {category}
+                  {item.name}
                 </Link>
               ))}
             </div>
@@ -58,14 +55,14 @@ export function Navigation() {
         {/* Mobile Nav Dropdown */}
         {isOpen && (
           <div className="md:hidden py-4 border-t border-border grid grid-cols-2 gap-4">
-            {CATEGORIES.map((category) => (
+            {navItems.map((item) => (
               <Link
-                key={category}
-                href={`/category/${category.toLowerCase()}`}
+                key={item.slug || 'home-mobile'}
+                href={item.slug === "" ? "/" : `/category/${item.slug}`}
                 className="text-sm font-body font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                 onClick={() => setIsOpen(false)}
               >
-                {category}
+                {item.name}
               </Link>
             ))}
           </div>

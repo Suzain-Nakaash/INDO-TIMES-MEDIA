@@ -1,8 +1,16 @@
+"use client";
+
 import Link from "next/link";
-import { MOCK_ARTICLES } from "@/lib/data";
+import { usePublishedArticles } from "@/lib/hooks/useArticles";
 
 export function TrendingStrip() {
-  const trendingArticles = MOCK_ARTICLES.slice(0, 5);
+  const { data } = usePublishedArticles(1, 10);
+  const trendingArticles = data?.articles
+    ?.slice()
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 5) || [];
+
+  if (trendingArticles.length === 0) return null;
 
   return (
     <section className="w-full bg-background border-b border-border py-4 overflow-hidden">
@@ -19,7 +27,7 @@ export function TrendingStrip() {
                 <span className="font-editorial text-2xl font-bold text-muted-foreground/30">
                   {index + 1}
                 </span>
-                <Link href={`/article/${article.id}`} className="group max-w-xs">
+                <Link href={`/article/${article.slug}`} className="group max-w-xs">
                   <h4 className="font-body text-sm font-semibold leading-snug group-hover:text-primary transition-colors line-clamp-2">
                     {article.title}
                   </h4>

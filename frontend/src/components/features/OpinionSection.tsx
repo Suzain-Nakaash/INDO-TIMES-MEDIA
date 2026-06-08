@@ -1,43 +1,50 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
-import { MOCK_ARTICLES } from "@/lib/data";
+import { useArticleFilter } from "@/lib/hooks/useArticles";
+import { useCategories } from "@/lib/hooks/useCategories";
 
 export function OpinionSection() {
-  const articles = MOCK_ARTICLES.slice(2, 6);
+  const { data: categories } = useCategories();
+  const category = categories?.find(
+    (c) => c.slug === "opinion" || c.name.toLowerCase() === "opinion"
+  );
+
+  const { data } = useArticleFilter({
+    categoryId: category?.id,
+    status: "PUBLISHED",
+    sortBy: "publishedAt",
+    sortOrder: "desc",
+    page: 1,
+    limit: 4,
+  });
+
+  const articles = data?.articles || [];
+  if (articles.length === 0) return null;
 
   return (
-    <section className="w-full py-16 bg-[#f7f5f0] border-b border-border">
+    <section className="w-full py-12 border-b border-border bg-muted/20">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-12">
-          <h2 className="font-editorial text-4xl font-bold text-foreground italic">Opinion & Editorial</h2>
-          <Link href="/category/opinion" className="font-body text-sm font-bold uppercase tracking-widest text-foreground hover:text-primary transition-colors">
-            All Opinions →
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="font-editorial text-4xl font-bold text-foreground">Opinion</h2>
+          <Link href="/category/opinion" className="font-body text-sm font-bold uppercase tracking-widest text-primary hover:text-primary/80 transition-colors">
+            More Opinion →
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-8">
-          {articles.map((article, i) => (
-            <div key={`op-${i}`} className="flex flex-col border-t border-foreground pt-6">
-              <Link href={`/article/${article.id}`} className="group block">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted relative grayscale">
-                    <Image
-                      src={`https://i.pravatar.cc/150?u=${article.author}`}
-                      alt={article.author}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-body text-xs font-bold uppercase tracking-wider">{article.author}</span>
-                    <span className="font-body text-[10px] text-muted-foreground uppercase">{article.publishedAt}</span>
-                  </div>
-                </div>
-                <h3 className="font-editorial text-xl font-bold leading-tight group-hover:text-primary transition-colors">
-                  {article.title}
-                </h3>
-              </Link>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {articles.map((article) => (
+            <Link key={article.id} href={`/article/${article.slug}`} className="group flex flex-col p-6 border border-border hover:border-primary/30 transition-colors">
+              <span className="font-body text-xs font-bold uppercase tracking-widest text-primary mb-3">
+                {article.category.name}
+              </span>
+              <h3 className="font-editorial text-xl font-bold leading-snug mb-3 group-hover:text-muted-foreground transition-colors">
+                {article.title}
+              </h3>
+              <p className="font-body text-sm text-muted-foreground line-clamp-3 mt-auto">
+                {article.summary}
+              </p>
+            </Link>
           ))}
         </div>
       </div>

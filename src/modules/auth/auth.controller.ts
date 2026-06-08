@@ -15,7 +15,7 @@ class AuthController {
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/api/v1/auth',
     });
@@ -24,6 +24,7 @@ class AuthController {
       new ApiResponse(200, {
         admin: result.admin,
         accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       }, 'Login successful'),
     );
   });
@@ -41,7 +42,7 @@ class AuthController {
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/api/v1/auth',
     });
@@ -49,6 +50,7 @@ class AuthController {
     res.status(200).json(
       new ApiResponse(200, {
         accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       }, 'Token refreshed successfully'),
     );
   });
@@ -65,7 +67,7 @@ class AuthController {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/api/v1/auth',
     });
 

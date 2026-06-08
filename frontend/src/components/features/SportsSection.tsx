@@ -1,39 +1,53 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { MOCK_ARTICLES } from "@/lib/data";
+import { useArticleFilter } from "@/lib/hooks/useArticles";
+import { useCategories } from "@/lib/hooks/useCategories";
 
 export function SportsSection() {
-  const articles = MOCK_ARTICLES.slice(0, 4);
+  const { data: categories } = useCategories();
+  const category = categories?.find(
+    (c) => c.slug === "sports" || c.name.toLowerCase() === "sports"
+  );
+
+  const { data } = useArticleFilter({
+    categoryId: category?.id,
+    status: "PUBLISHED",
+    sortBy: "publishedAt",
+    sortOrder: "desc",
+    page: 1,
+    limit: 4,
+  });
+
+  const articles = data?.articles || [];
+  if (articles.length === 0) return null;
 
   return (
     <section className="w-full py-12 border-b border-border bg-background">
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className="font-editorial text-4xl font-bold text-foreground mb-8 uppercase tracking-widest border-b-4 border-foreground pb-2 inline-block">
-          Sports
-        </h2>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="font-editorial text-4xl font-bold text-foreground">Sports</h2>
+          <Link href="/category/sports" className="font-body text-sm font-bold uppercase tracking-widest text-primary hover:text-primary/80 transition-colors">
+            More Sports →
+          </Link>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {articles.map((article, i) => (
-            <div key={`sport-${i}`} className="flex flex-col group relative overflow-hidden h-[400px]">
-              <Image
-                src={article.imageUrl}
-                alt={article.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-              
-              <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col justify-end">
-                <span className="font-body text-[10px] font-bold uppercase tracking-widest text-primary mb-2">
-                  {article.category}
-                </span>
-                <Link href={`/article/${article.id}`}>
-                  <h3 className="font-editorial text-xl font-bold leading-tight text-white group-hover:text-gray-300 transition-colors">
-                    {article.title}
-                  </h3>
-                </Link>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {articles.map((article) => (
+            <Link key={article.id} href={`/article/${article.slug}`} className="group flex flex-col">
+              {article.featuredImage && (
+                <div className="relative w-full aspect-video mb-3 bg-muted overflow-hidden">
+                  <Image src={article.featuredImage} alt={article.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                </div>
+              )}
+              <h3 className="font-editorial text-xl font-bold leading-snug mb-2 group-hover:text-muted-foreground transition-colors">
+                {article.title}
+              </h3>
+              <p className="font-body text-sm text-muted-foreground line-clamp-2 mt-auto">
+                {article.summary}
+              </p>
+            </Link>
           ))}
         </div>
       </div>

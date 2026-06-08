@@ -1,40 +1,53 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { MOCK_ARTICLES } from "@/lib/data";
+import { useArticleFilter } from "@/lib/hooks/useArticles";
+import { useCategories } from "@/lib/hooks/useCategories";
 
 export function PoliticsMagazine() {
-  const articles = MOCK_ARTICLES.slice(0, 4);
+  const { data: categories } = useCategories();
+  const category = categories?.find(
+    (c) => c.slug === "politics" || c.name.toLowerCase() === "politics"
+  );
+
+  const { data } = useArticleFilter({
+    categoryId: category?.id,
+    status: "PUBLISHED",
+    sortBy: "publishedAt",
+    sortOrder: "desc",
+    page: 1,
+    limit: 4,
+  });
+
+  const articles = data?.articles || [];
+  if (articles.length === 0) return null;
 
   return (
-    <section className="w-full py-16 bg-[#faf9f5] border-b border-border">
+    <section className="w-full py-12 border-b border-border bg-muted/20">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-center mb-12">
-          <h2 className="font-editorial text-5xl font-bold text-foreground text-center italic">
-            Politics & Policy
-          </h2>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="font-editorial text-4xl font-bold text-foreground">Politics</h2>
+          <Link href="/category/politics" className="font-body text-sm font-bold uppercase tracking-widest text-primary hover:text-primary/80 transition-colors">
+            More Politics →
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {articles.map((article, index) => (
-            <div key={`pol-${index}`} className="flex flex-col group cursor-pointer">
-              <div className="relative w-full aspect-[3/4] mb-6 overflow-hidden shadow-lg">
-                <Image
-                  src={article.imageUrl}
-                  alt={article.title}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <span className="inline-block px-2 py-1 bg-white text-black font-body text-[10px] font-bold uppercase tracking-widest mb-3">
-                    {article.author}
-                  </span>
-                  <h3 className="font-editorial text-2xl font-bold leading-tight text-white">
-                    {article.title}
-                  </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {articles.map((article) => (
+            <Link key={article.id} href={`/article/${article.slug}`} className="group flex flex-col">
+              {article.featuredImage && (
+                <div className="relative w-full aspect-video mb-3 bg-muted overflow-hidden">
+                  <Image src={article.featuredImage} alt={article.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
                 </div>
-              </div>
-            </div>
+              )}
+              <h3 className="font-editorial text-xl font-bold leading-snug mb-2 group-hover:text-muted-foreground transition-colors">
+                {article.title}
+              </h3>
+              <p className="font-body text-sm text-muted-foreground line-clamp-2 mt-auto">
+                {article.summary}
+              </p>
+            </Link>
           ))}
         </div>
       </div>
